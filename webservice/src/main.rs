@@ -1,3 +1,9 @@
+#[macro_use]
+extern crate diesel;
+extern crate dotenv;
+
+use dotenv::dotenv;
+
 use std::sync::{
     atomic::{AtomicUsize, Ordering},
     Arc,
@@ -12,6 +18,9 @@ use clap::{App as ClapApp, Arg};
 mod server;
 mod session;
 mod db;
+
+use self::diesel::prelude::*;
+use db::schema::messages::dsl::*;
 
 /// Entry point for our websocket route
 async fn chat_route(
@@ -34,6 +43,8 @@ async fn get_count(count: web::Data<Arc<AtomicUsize>>) -> impl Responder {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    dotenv().expect("cannot load dotenv");
+
     env_logger::init();
 
     let app = ClapApp::new("Rust Chat Server")
@@ -47,23 +58,25 @@ async fn main() -> std::io::Result<()> {
                 .long("port")
                 .value_name("PORT")
                 .help("The port to bind the server on")
-                .default_value("8081")
+                .default_value("8082")
         ).get_matches();
 
     let port = app.value_of("port").unwrap();
     println!("port : {}", port);
 
     let connection = db::connection::establish_connection();
-    let results = posts.filter(published.eq(true))
-        .limit(5)
-        .load::<Post>(&connection)
-        .expect("Error loading posts");
 
-    println!("Displaying {} posts", results.len());
-    for post in results {
-        println!("{}", post.title);
+    let results = messages.limit(5)
+        // .filter(published.eq(true))
+        .load::<db::models::Message>(&connection)
+        .expect("Error loading messages");
+
+
+    println!("Displaying {} messages", results.len());
+    for message in results {
+        println!("{}", message.id);
         println!("----------\n");
-        println!("{}", post.body);
+        println!("{}", message.body);
     }
 
     // App state
@@ -88,7 +101,7 @@ async fn main() -> std::io::Result<()> {
             // websocket
             .service(web::resource("/ws/").to(chat_route))
             // static resources
-            // .service(fs::Files::new("/static/", "static/"))
+            .service(fs::Files::new("/static/", "static/"))
     })
         .bind(format!("{}:{}", "127.0.0.1", port))?
         .run()
