@@ -276,7 +276,7 @@ async fn main() -> std::io::Result<()> {
             // static resources
             .service(fs::Files::new("/static/", "static/"))
     })
-        .bind(format!("{}:{}", "127.0.0.1", port)))?
-    .run()
+        .bind(format!("{}:{}", "127.0.0.1", port))?
+        .run()
         .await
 }
