@@ -1,36 +1,44 @@
 use diesel::prelude::*;
 use super::models::*;
-use super::schema::messages::dsl::*;
+use crate::db::schema::messages::dsl::*;
+use chrono::{DateTime, Local};
+use crate::db::connection::{MySQLPool, MySQLPooledConnection};
 
-pub struct MessageConnector<'a> {
-    conn: &'a MysqlConnection
+pub struct MessageConnector {
+    conn: MySQLPool
 }
 
-impl MessageConnector<'_> {
-    pub fn new(conn: &MysqlConnection) -> MessageConnector {
+impl MessageConnector {
+    pub fn new(conn: MySQLPool) -> MessageConnector {
         MessageConnector {
             conn
         }
     }
 
+    fn _conn_handler(&self) -> MySQLPooledConnection {
+        self.conn.get().expect("Cannot get connection")
+    }
+
     pub fn select_last_5_messages(&self) -> Vec<Message> {
         messages.limit(5)
             // .filter(published.eq(true))
-            .load(self.conn)
+            .load(&self._conn_handler())
             .expect("Error loading messages")
     }
 
-    pub fn create_message(&self, the_body: & str) -> Message {
+    pub fn create_message(&self, the_client: &str, the_body: & str) -> Message {
         let new_message = NewMessage {
-            body: the_body
+            client: the_client,
+            body: the_body,
+            date: Local::now().naive_local()
         };
 
         diesel::insert_into(messages)
             .values(&new_message)
-            .execute(self.conn)
+            .execute(&self._conn_handler())
             .expect("Error saving new message");
 
-        messages.order(id.desc()).first(self.conn).expect("Cannot execute select")
+        messages.order(id.desc()).first(&self._conn_handler()).expect("Cannot execute select")
     }
 
     pub fn update_message(&self, the_id: i32, new_body: &str) -> Message {
@@ -40,17 +48,17 @@ impl MessageConnector<'_> {
         //     .expect(&format!("Unable to find message {}", id));
 
         diesel::update(messages.find(the_id))
-            .set(&MessageForm {
+            .set(&UpdateMessage {
                 body: Some(new_body)
-            }).execute(self.conn)
+            }).execute(&self._conn_handler())
             .expect(&format!("Unable to update message {}", the_id));
 
-        messages.find(the_id).first(self.conn).expect(&format!("unable to find message {}", the_id))
+        messages.find(the_id).first(&self._conn_handler()).expect(&format!("unable to find message {}", the_id))
     }
 
     pub fn delete_message(&self, pattern: &str) {
         diesel::delete(messages.filter(body.like(pattern)))
-            .execute(self.conn)
+            .execute(&self._conn_handler())
             .expect("Error deleting messages");
     }
 }

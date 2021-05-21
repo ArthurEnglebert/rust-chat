@@ -2,6 +2,10 @@
 extern crate diesel;
 extern crate dotenv;
 
+mod server;
+mod session;
+mod db;
+
 use dotenv::dotenv;
 
 use std::sync::{
@@ -14,12 +18,12 @@ use actix_files as fs;
 use actix_web::{web, App, Error, HttpRequest, HttpResponse, HttpServer, Responder};
 use actix_web_actors::ws;
 use clap::{App as ClapApp, Arg};
+use db::messages::MessageRepository;
 
-mod server;
-mod session;
-mod db;
-
-use self::diesel::prelude::*;
+pub struct AppState {
+    pub visitor_count: AtomicUsize,
+    pub message_repo: MessageRepository,
+}
 
 /// Entry point for our websocket route
 async fn chat_route(
@@ -35,8 +39,8 @@ async fn chat_route(
 }
 
 ///  Displays and affects state
-async fn get_count(count: web::Data<Arc<AtomicUsize>>) -> impl Responder {
-    let current_count = count.fetch_add(1, Ordering::SeqCst);
+async fn get_count(app_state: web::Data<AppState>) -> impl Responder {
+    let current_count = app_state.visitor_count.fetch_add(1, Ordering::SeqCst);
     format!("Visitors: {}", current_count)
 }
 
@@ -63,20 +67,21 @@ async fn main() -> std::io::Result<()> {
     let port = app.value_of("port").unwrap();
     println!("port : {}", port);
 
-    let connection = db::connection::establish_connection();
-    let message_connector = db::connector::MessageConnector::new(&connection);
-    let results = message_connector.select_last_5_messages();
+    let connection = db::connection::establish_pool();
+    let message_repo = db::messages::MessageRepository::new(connection);
+    let results = message_repo.select_last_5_messages();
 
     println!("Displaying {} messages", results.len());
     for message in results {
-        println!("{}", message.id);
-        println!("----------\n");
-        println!("{}", message.body);
+        println!("[{}] {} : {}", message.date, message.client, message.msg);
     }
 
     // App state
     // We are keeping a count of the number of visitors
-    let app_state = Arc::new(AtomicUsize::new(0));
+    let app_state = Arc::new(AppState {
+        visitor_count: AtomicUsize::new(0),
+        message_repo
+    });
 
     // Start chat server actor
     let server = server::ChatServer::new(app_state.clone()).start();

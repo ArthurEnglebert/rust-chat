@@ -11,6 +11,7 @@ use std::sync::{
 };
 
 use std::collections::{HashMap, HashSet};
+use crate::AppState;
 
 /// Chat server sends this messages to session
 #[derive(Message)]
@@ -68,11 +69,11 @@ pub struct ChatServer {
     sessions: HashMap<usize, Recipient<Message>>,
     rooms: HashMap<String, HashSet<usize>>,
     rng: ThreadRng,
-    visitor_count: Arc<AtomicUsize>,
+    app_state: Arc<AppState>,
 }
 
 impl ChatServer {
-    pub fn new(visitor_count: Arc<AtomicUsize>) -> ChatServer {
+    pub fn new(app_state: Arc<AppState>) -> ChatServer {
         // default room
         let mut rooms = HashMap::new();
         rooms.insert("Main".to_owned(), HashSet::new());
@@ -81,7 +82,7 @@ impl ChatServer {
             sessions: HashMap::new(),
             rooms,
             rng: rand::thread_rng(),
-            visitor_count,
+            app_state,
         }
     }
 }
@@ -130,7 +131,7 @@ impl Handler<Connect> for ChatServer {
             .or_insert_with(HashSet::new)
             .insert(id);
 
-        let count = self.visitor_count.fetch_add(1, Ordering::SeqCst);
+        let count = self.app_state.visitor_count.fetch_add(1, Ordering::SeqCst);
         self.send_message("Main", &format!("Total visitors {}", count), 0);
 
         // send id back

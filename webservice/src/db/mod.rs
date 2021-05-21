@@ -1,4 +1,4 @@
 pub mod connection;
-pub mod schema;
-pub mod models;
-pub mod connector;
+mod schema;
+
+pub mod messages;

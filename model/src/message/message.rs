@@ -2,9 +2,9 @@ use crate::client::client::Client;
 use chrono::{DateTime, Local};
 
 pub struct Message {
-    client: String, // not a Client because we want to be able to delete them while still having message history
-    msg: String,
-    date: DateTime<Local>
+    pub client: String, // not a Client because we want to be able to delete them while still having message history
+    pub msg: String,
+    pub date: DateTime<Local>
 }
 
 impl Message {
