@@ -6,14 +6,14 @@ use std::num::NonZeroU32;
 use uuid::Uuid;
 
 pub struct Client {
-    uuid: String,
-    name: String,
-    pass: Pass,
+    pub uuid: String,
+    pub name: String,
+    pub pass: Pass,
 }
 
-struct Pass {
-    encrypted_pass: String,
-    salt: String,
+pub struct Pass {
+    pub encrypted_pass: String,
+    pub salt: String,
 }
 
 const CREDENTIAL_LEN: usize = digest::SHA512_OUTPUT_LEN;

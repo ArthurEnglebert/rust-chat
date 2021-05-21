@@ -19,10 +19,12 @@ use actix_web::{web, App, Error, HttpRequest, HttpResponse, HttpServer, Responde
 use actix_web_actors::ws;
 use clap::{App as ClapApp, Arg};
 use db::messages::MessageRepository;
+use crate::db::client::ClientRepository;
 
 pub struct AppState {
     pub visitor_count: AtomicUsize,
     pub message_repo: MessageRepository,
+    pub client_repo: ClientRepository,
 }
 
 /// Entry point for our websocket route
@@ -67,8 +69,9 @@ async fn main() -> std::io::Result<()> {
     let port = app.value_of("port").unwrap();
     println!("port : {}", port);
 
-    let connection = db::connection::establish_pool();
-    let message_repo = db::messages::MessageRepository::new(connection);
+    let pool = db::connection::establish_pool();
+    let message_repo = db::messages::MessageRepository::new(pool.clone());
+    let client_repo = db::client::ClientRepository::new(pool.clone());
     let results = message_repo.select_last_5_messages();
 
     println!("Displaying {} messages", results.len());
@@ -80,7 +83,8 @@ async fn main() -> std::io::Result<()> {
     // We are keeping a count of the number of visitors
     let app_state = Arc::new(AppState {
         visitor_count: AtomicUsize::new(0),
-        message_repo
+        message_repo,
+        client_repo,
     });
 
     // Start chat server actor
