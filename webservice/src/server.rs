@@ -1,4 +1,4 @@
-//! `ChatServer` is an actor. It maintains list of connection client session.
+//! `ChatServer` is an actor. It maintains list of connection clients session.
 //! And manages available rooms. Peers send messages to other peers in same
 //! room through `ChatServer`.
 
@@ -38,7 +38,7 @@ pub struct Disconnect {
 #[derive(Message)]
 #[rtype(result = "()")]
 pub struct ClientMessage {
-    /// Id of the client session
+    /// Id of the clients session
     pub id: usize,
     /// Peer message
     pub msg: String,

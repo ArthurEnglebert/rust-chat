@@ -1,9 +1,9 @@
-use chat_model::client::client::{Client, Pass};
-use crate::db::connection::MySQLPool;
-use crate::db::client::connector::ClientConnector;
-
 mod connector;
 mod models;
+
+use chat_model::client::client::{Client, Pass};
+use crate::db::connection::MySQLPool;
+use crate::db::clients::connector::ClientConnector;
 
 pub struct ClientRepository {
     connector: ClientConnector,

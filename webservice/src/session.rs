@@ -7,7 +7,7 @@ use super::server;
 
 /// How often heartbeat pings are sent
 const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(5);
-/// How long before lack of client response causes a timeout
+/// How long before lack of clients response causes a timeout
 const CLIENT_TIMEOUT: Duration = Duration::from_secs(10);
 
 pub struct WsChatSession {
@@ -184,12 +184,12 @@ impl WsChatSession {
         }
     }
 
-    /// helper method that sends ping to client every second.
+    /// helper method that sends ping to clients every second.
     ///
-    /// also this method checks heartbeats from client
+    /// also this method checks heartbeats from clients
     fn hb(&self, ctx: &mut ws::WebsocketContext<Self>) {
         ctx.run_interval(HEARTBEAT_INTERVAL, |act, ctx| {
-            // check client heartbeats
+            // check clients heartbeats
             if Instant::now().duration_since(act.hb) > CLIENT_TIMEOUT {
                 // heartbeat timed out
                 println!("Websocket Client heartbeat failed, disconnecting!");

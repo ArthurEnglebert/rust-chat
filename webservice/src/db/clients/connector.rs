@@ -1,6 +1,6 @@
 use crate::db::connection::{MySQLPooledConnection, MySQLPool};
 use super::models::Client;
-use crate::db::client::models::{NewClient, UpdateClient};
+use crate::db::clients::models::{NewClient, UpdateClient};
 use crate::db::schema::clients::dsl::*;
 use diesel::{RunQueryDsl, QueryDsl, ExpressionMethods, TextExpressionMethods};
 
@@ -34,7 +34,7 @@ impl ClientConnector {
 
         clients.find(&client.uuid)
             .first(&self._conn_handler())
-            .expect(&format!("unable to find client {}", client.uuid))
+            .expect(&format!("unable to find clients {}", client.uuid))
     }
 
     pub fn update_client(&self, the_uuid: &str, the_name: &str) -> Client {
@@ -44,16 +44,16 @@ impl ClientConnector {
                 pass: None,
                 salt: None,
             }).execute(&self._conn_handler())
-            .expect(&format!("Unable to update client {}", the_uuid));
+            .expect(&format!("Unable to update clients {}", the_uuid));
 
-        self.find_client(the_uuid).expect(&format!("unable to find client {}", the_uuid))
+        self.find_client(the_uuid).expect(&format!("unable to find clients {}", the_uuid))
     }
 
     pub fn find_client(&self, the_uuid: &str) -> Option<Client> {
         match clients.find(the_uuid).first(&self._conn_handler()) {
             Ok(client) => Some(client),
             Err(e) => {
-                eprintln!("Cannot find client {} because : {:?}", the_uuid, e);
+                eprintln!("Cannot find clients {} because : {:?}", the_uuid, e);
                 None
             }
         }
