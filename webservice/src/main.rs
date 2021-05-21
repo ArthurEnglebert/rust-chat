@@ -20,7 +20,6 @@ mod session;
 mod db;
 
 use self::diesel::prelude::*;
-use db::schema::messages::dsl::*;
 
 /// Entry point for our websocket route
 async fn chat_route(
@@ -58,19 +57,15 @@ async fn main() -> std::io::Result<()> {
                 .long("port")
                 .value_name("PORT")
                 .help("The port to bind the server on")
-                .default_value("8082")
+                .default_value("8083")
         ).get_matches();
 
     let port = app.value_of("port").unwrap();
     println!("port : {}", port);
 
     let connection = db::connection::establish_connection();
-
-    let results = messages.limit(5)
-        // .filter(published.eq(true))
-        .load::<db::models::Message>(&connection)
-        .expect("Error loading messages");
-
+    let message_connector = db::connector::MessageConnector::new(&connection);
+    let results = message_connector.select_last_5_messages();
 
     println!("Displaying {} messages", results.len());
     for message in results {
