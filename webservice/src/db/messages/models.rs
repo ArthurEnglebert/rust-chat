@@ -5,8 +5,8 @@ use chrono::prelude::*;
 #[derive(Queryable)]
 pub struct Message {
     pub id: i32,
-    pub client: String,
     pub body: String,
+    pub client: String,
     pub date: NaiveDateTime,
 }
 

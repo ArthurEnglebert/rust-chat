@@ -1,5 +1,7 @@
 use crate::client::client::Client;
 use chrono::{DateTime, Local};
+use std::fmt::{Debug, Formatter};
+use core::fmt;
 
 pub struct Message {
     pub client: String, // not a Client because we want to be able to delete them while still having message history
@@ -26,6 +28,16 @@ impl Message {
             msg : String::from(msg),
             date: Local::now()
         }
+    }
+}
+
+impl Debug for Message {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Message")
+            .field("client", &self.client)
+            .field("msg", &self.msg)
+            .field("date", &self.date)
+            .finish()
     }
 }
 

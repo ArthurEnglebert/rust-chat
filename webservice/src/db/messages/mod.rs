@@ -27,4 +27,8 @@ impl MessageRepository {
                 }
             }).collect()
     }
+
+    pub fn save_message(&self, client: &str, msg: &str) {
+        self.connector.create_message(client, msg);
+    }
 }

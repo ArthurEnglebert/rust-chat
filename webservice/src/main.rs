@@ -75,12 +75,6 @@ async fn main() -> std::io::Result<()> {
     let message_repo = db::messages::MessageRepository::new(pool.clone());
     let client_repo = db::clients::ClientRepository::new(pool.clone());
     let canal_repo = db::canals::CanalRepository::new(pool.clone());
-    let results = message_repo.select_last_5_messages();
-
-    println!("Displaying {} messages", results.len());
-    for message in results {
-        println!("[{}] {} : {}", message.date, message.client, message.msg);
-    }
 
     // App state
     // We are keeping a count of the number of visitors

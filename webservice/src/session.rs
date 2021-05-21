@@ -147,15 +147,17 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsChatSession {
                         _ => ctx.text(format!("!!! unknown command: {:?}", m)),
                     }
                 } else {
-                    let msg = if let Some(ref name) = self.name {
-                        format!("{}: {}", name, m)
+                    let client_name = if let Some(ref name) = self.name {
+                        String::from(name)
                     } else {
-                        m.to_owned()
+                        String::from("<unknown>")
                     };
+
                     // send message to chat server
                     self.addr.do_send(server::ClientMessage {
                         id: self.id,
-                        msg,
+                        client_name,
+                        msg: m.to_owned(),
                         room: self.room.clone(),
                     })
                 }

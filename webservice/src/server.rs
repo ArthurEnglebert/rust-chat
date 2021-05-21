@@ -40,6 +40,8 @@ pub struct Disconnect {
 pub struct ClientMessage {
     /// Id of the clients session
     pub id: usize,
+    /// Peer name
+    pub client_name: String,
     /// Peer message
     pub msg: String,
     /// Room name
@@ -100,6 +102,13 @@ impl ChatServer {
             }
         }
     }
+
+    /// Send message to specific user
+    fn send_message_to_user(&self, message: &str, session_id: usize) {
+        if let Some(addr) = self.sessions.get(&session_id) {
+            let _ = addr.do_send(Message(message.to_owned()));
+        }
+    }
 }
 
 /// Make actor from `ChatServer`
@@ -133,6 +142,15 @@ impl Handler<Connect> for ChatServer {
 
         let count = self.app_state.visitor_count.fetch_add(1, Ordering::SeqCst);
         self.send_message("Main", &format!("Total visitors {}", count), 0);
+
+        // try sending last 5 msg
+        let results = self.app_state.message_repo.select_last_5_messages();
+
+        self.send_message_to_user(&format!("Displaying last {} messages", results.len()), id);
+        for message in results {
+            println!("{:?}", message);
+            self.send_message_to_user(&format!("[{}] {} : {}", message.date, message.client, message.msg), id);
+        }
 
         // send id back
         id
@@ -169,7 +187,8 @@ impl Handler<ClientMessage> for ChatServer {
     type Result = ();
 
     fn handle(&mut self, msg: ClientMessage, _: &mut Context<Self>) {
-        self.send_message(&msg.room, msg.msg.as_str(), msg.id);
+        self.app_state.message_repo.save_message(&msg.client_name, &msg.msg);
+        self.send_message(&msg.room, &format!("{} : {}", msg.client_name, msg.msg), msg.id);
     }
 }
 

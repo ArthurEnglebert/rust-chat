@@ -21,7 +21,6 @@ impl MessageConnector {
 
     pub fn select_last_5_messages(&self) -> Vec<Message> {
         messages.limit(5)
-            // .filter(published.eq(true))
             .load(&self._conn_handler())
             .expect("Error loading messages")
     }
@@ -42,10 +41,6 @@ impl MessageConnector {
     }
 
     pub fn update_message(&self, the_id: i32, new_body: &str) -> Message {
-        // diesel::update(messages.find(id))
-        //     .set(body.eq(newBody))
-        //     .execute(conn)
-        //     .expect(&format!("Unable to find message {}", id));
 
         diesel::update(messages.find(the_id))
             .set(&UpdateMessage {
