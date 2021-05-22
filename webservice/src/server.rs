@@ -6,7 +6,7 @@ use actix::prelude::*;
 use rand::{self, rngs::ThreadRng, Rng};
 
 use std::sync::{
-    atomic::{AtomicUsize, Ordering},
+    atomic::{Ordering},
     Arc,
 };
 

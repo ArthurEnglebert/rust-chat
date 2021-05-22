@@ -1,6 +1,4 @@
 use crate::db::schema::clients;
-use diesel::prelude::*;
-use chrono::prelude::*;
 
 #[derive(Queryable)]
 pub struct Client {

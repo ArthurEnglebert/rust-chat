@@ -1,5 +1,4 @@
-use diesel::prelude::*;
-use diesel::mysql::{MysqlConnection, Mysql};
+use diesel::mysql::MysqlConnection;
 use std::env;
 use diesel::r2d2::{Pool, ConnectionManager, PooledConnection};
 

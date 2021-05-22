@@ -41,6 +41,19 @@ impl Debug for Message {
     }
 }
 
+impl Clone for Message {
+    fn clone(&self) -> Self {
+        let client = self.client.clone();
+        let msg = self.msg.clone();
+        let date = self.date.clone();
+        Message {
+            client,
+            msg,
+            date
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::client::client::Client;

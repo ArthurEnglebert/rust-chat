@@ -24,9 +24,9 @@ use db::canals::CanalRepository;
 
 pub struct AppState {
     pub visitor_count: AtomicUsize,
-    pub message_repo: MessageRepository,
-    pub client_repo: ClientRepository,
-    pub canal_repo: CanalRepository,
+    pub message_repo: Box<dyn MessageRepository + Send + Sync>,
+    pub client_repo: Box<dyn ClientRepository + Send + Sync>,
+    pub canal_repo: Box<dyn CanalRepository + Send + Sync>,
 }
 
 /// Entry point for our websocket route
@@ -65,24 +65,24 @@ async fn main() -> std::io::Result<()> {
                 .long("port")
                 .value_name("PORT")
                 .help("The port to bind the server on")
-                .default_value("8083")
+                .default_value("8084")
         ).get_matches();
 
     let port = app.value_of("port").unwrap();
     println!("port : {}", port);
 
     let pool = db::connection::establish_pool();
-    let message_repo = db::messages::MessageRepository::new(pool.clone());
-    let client_repo = db::clients::ClientRepository::new(pool.clone());
-    let canal_repo = db::canals::CanalRepository::new(pool.clone());
+    let message_repo = db::messages::MessageRepositoryFactory::new(Some(pool.clone()));
+    let client_repo = db::clients::MysqlClientRepository::new(pool.clone());
+    let canal_repo = db::canals::MysqlCanalRepository::new(pool.clone());
 
     // App state
     // We are keeping a count of the number of visitors
     let app_state = Arc::new(AppState {
         visitor_count: AtomicUsize::new(0),
-        message_repo,
-        client_repo,
-        canal_repo,
+        message_repo: Box::new(message_repo),
+        client_repo: Box::new(client_repo),
+        canal_repo: Box::new(canal_repo),
     });
 
     // Start chat server actor

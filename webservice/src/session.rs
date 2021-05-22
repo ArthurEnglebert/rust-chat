@@ -86,7 +86,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsChatSession {
             Ok(msg) => msg,
         };
 
-        println!("WEBSOCKET MESSAGE: {:?}", msg);
+        // println!("WEBSOCKET MESSAGE: {:?}", msg);
         match msg {
             ws::Message::Ping(msg) => {
                 self.hb = Instant::now();
@@ -150,7 +150,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsChatSession {
                     let client_name = if let Some(ref name) = self.name {
                         String::from(name)
                     } else {
-                        String::from("<unknown>")
+                        String::from("unknown")
                     };
 
                     // send message to chat server

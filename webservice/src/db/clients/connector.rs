@@ -2,7 +2,7 @@ use crate::db::connection::{MySQLPooledConnection, MySQLPool};
 use super::models::Client;
 use crate::db::clients::models::{NewClient, UpdateClient};
 use crate::db::schema::clients::dsl::*;
-use diesel::{RunQueryDsl, QueryDsl, ExpressionMethods, TextExpressionMethods};
+use diesel::{RunQueryDsl, QueryDsl, TextExpressionMethods};
 
 pub struct ClientConnector {
     conn: MySQLPool

@@ -1,5 +1,4 @@
 use crate::db::connection::{MySQLPooledConnection, MySQLPool};
-use diesel::prelude::*;
 use super::models::*;
 use crate::db::schema::canals::dsl::*;
 use diesel::{RunQueryDsl, QueryDsl, ExpressionMethods, TextExpressionMethods};

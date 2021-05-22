@@ -1,5 +1,4 @@
 use crate::db::schema::messages;
-use diesel::prelude::*;
 use chrono::prelude::*;
 
 #[derive(Queryable)]

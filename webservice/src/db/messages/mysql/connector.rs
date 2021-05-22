@@ -1,7 +1,7 @@
 use diesel::prelude::*;
-use super::models::*;
+use crate::db::messages::mysql::models::*;
 use crate::db::schema::messages::dsl::*;
-use chrono::{DateTime, Local};
+use chrono::{Local};
 use crate::db::connection::{MySQLPool, MySQLPooledConnection};
 
 pub struct MessageConnector {
