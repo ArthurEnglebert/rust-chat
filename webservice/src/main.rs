@@ -2,9 +2,8 @@
 extern crate diesel;
 extern crate dotenv;
 
-mod server;
-mod session;
 mod db;
+mod websocket;
 
 use dotenv::dotenv;
 
@@ -33,10 +32,10 @@ pub struct AppState {
 async fn chat_route(
     req: HttpRequest,
     stream: web::Payload,
-    srv: web::Data<Addr<server::ChatServer>>,
+    srv: web::Data<Addr<websocket::server::ChatServer>>,
 ) -> Result<HttpResponse, Error> {
     ws::start(
-        session::WsChatSession::new(srv.get_ref().clone()),
+        websocket::session::WsChatSession::new(srv.get_ref().clone()),
         &req,
         stream,
     )
@@ -86,7 +85,7 @@ async fn main() -> std::io::Result<()> {
     });
 
     // Start chat server actor
-    let server = server::ChatServer::new(app_state.clone()).start();
+    let server = websocket::server::ChatServer::new(app_state.clone()).start();
 
     // Create Http server with websocket support
     HttpServer::new(move || {

@@ -4,6 +4,7 @@ use actix::*;
 use actix_web_actors::ws;
 
 use super::server;
+use crate::websocket::commands::CommandRegistry;
 
 /// How often heartbeat pings are sent
 const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(5);
@@ -12,16 +13,18 @@ const CLIENT_TIMEOUT: Duration = Duration::from_secs(10);
 
 pub struct WsChatSession {
     /// unique session id
-    id: usize,
+    pub id: usize,
     /// Client must send ping at least once per 10 seconds (CLIENT_TIMEOUT),
     /// otherwise we drop connection.
     hb: Instant,
     /// joined room
-    room: String,
+    pub room: String,
     /// peer name
-    name: Option<String>,
+    pub name: Option<String>,
     /// Chat server
-    addr: Addr<server::ChatServer>,
+    pub addr: Addr<server::ChatServer>,
+    /// Command Registry,
+    command_reg: CommandRegistry,
 }
 
 impl Actor for WsChatSession {
@@ -96,71 +99,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsChatSession {
                 self.hb = Instant::now();
             }
             ws::Message::Text(text) => {
-                let m = text.trim();
-                // we check for /sss type of messages
-                if m.starts_with('/') {
-                    let v: Vec<&str> = m.splitn(2, ' ').collect();
-                    match v[0] {
-                        "/list" => {
-                            // Send ListRooms message to chat server and wait for
-                            // response
-                            println!("List rooms");
-                            self.addr
-                                .send(server::ListRooms)
-                                .into_actor(self)
-                                .then(|res, _, ctx| {
-                                    match res {
-                                        Ok(rooms) => {
-                                            for room in rooms {
-                                                ctx.text(room);
-                                            }
-                                        }
-                                        _ => println!("Something is wrong"),
-                                    }
-                                    fut::ready(())
-                                })
-                                .wait(ctx)
-                            // .wait(ctx) pauses all events in context,
-                            // so actor wont receive any new messages until it get list
-                            // of rooms back
-                        }
-                        "/join" => {
-                            if v.len() == 2 {
-                                self.room = v[1].to_owned();
-                                self.addr.do_send(server::Join {
-                                    id: self.id,
-                                    name: self.room.clone(),
-                                });
-
-                                ctx.text("joined");
-                            } else {
-                                ctx.text("!!! room name is required");
-                            }
-                        }
-                        "/name" => {
-                            if v.len() == 2 {
-                                self.name = Some(v[1].to_owned());
-                            } else {
-                                ctx.text("!!! name is required");
-                            }
-                        }
-                        _ => ctx.text(format!("!!! unknown command: {:?}", m)),
-                    }
-                } else {
-                    let client_name = if let Some(ref name) = self.name {
-                        String::from(name)
-                    } else {
-                        String::from("unknown")
-                    };
-
-                    // send message to chat server
-                    self.addr.do_send(server::ClientMessage {
-                        id: self.id,
-                        client_name,
-                        msg: m.to_owned(),
-                        room: self.room.clone(),
-                    })
-                }
+                self.analyze_input_and_dispatch(text, ctx);
             }
             ws::Message::Binary(_) => println!("Unexpected binary"),
             ws::Message::Close(reason) => {
@@ -183,6 +122,7 @@ impl WsChatSession {
             room: "Main".to_owned(),
             name: None,
             addr,
+            command_reg: CommandRegistry::new(),
         }
     }
 
@@ -208,5 +148,29 @@ impl WsChatSession {
 
             ctx.ping(b"");
         });
+    }
+
+    fn analyze_input_and_dispatch(&mut self, input: String, ctx: &mut ws::WebsocketContext<WsChatSession>) {
+        let m = input.trim();
+        // we check for /sss type of messages
+        if m.starts_with('/') {
+            if ! CommandRegistry::new().invoke(&input, self, ctx) {
+                ctx.text(format!("!!! unknown command: {:?}", m))
+            }
+        } else {
+            let client_name = if let Some(ref name) = self.name {
+                String::from(name)
+            } else {
+                String::from("unknown")
+            };
+
+            // send message to chat server
+            self.addr.do_send(server::ClientMessage {
+                id: self.id,
+                client_name,
+                msg: m.to_owned(),
+                room: self.room.clone(),
+            })
+        }
     }
 }
